@@ -70,9 +70,7 @@ class Generator(ast.NodeVisitor):
         self.emit(')')
 
     def visit_Str(self, node):
-        self.emit('"')
-        self.emit(node.s)
-        self.emit('"')
+        self.emit(f"'{node.s}'")
 
     def visit_Name(self, node):
         self.emit(node.id)
@@ -102,7 +100,7 @@ class Generator(ast.NodeVisitor):
         self.emit(' {\n')
         self.emitter.indent()
 
-        for arg, expr in reversed(list(zip(reversed(node.args), reversed(node.defaults)))):
+        for arg, expr in zip(reversed(node.args), reversed(node.defaults)):
             if expr is None:
                 continue
 

@@ -18,7 +18,7 @@ def generator(emitter):
 
 def test_string(emitter, generator):
     generator.visit(ast.Str('test'))
-    assert str(emitter) == '"test"'
+    assert str(emitter) == "'test'"
 
 
 def test_name(emitter, generator):

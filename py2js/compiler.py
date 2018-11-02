@@ -4,12 +4,17 @@ from .emitter import Emitter
 from .generator import Generator
 
 
-def compile(filename):
-    with open(filename) as file:
-        node = ast.parse(file.read(), filename)
+def compile_source(source, filename='unknown'):
+    node = ast.parse(source, filename)
 
     emitter = Emitter()
     generator = Generator(emitter)
     generator.visit(node)
 
-    print(emitter)
+    return str(emitter)
+
+
+def compile(filename):
+    with open(filename) as file:
+        source = file.read()
+    print(compile_source(source, filename))
