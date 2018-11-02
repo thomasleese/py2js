@@ -1,4 +1,7 @@
 from argparse import ArgumentParser
+import ast
+
+from .generator import Generator
 
 
 def main():
@@ -6,4 +9,9 @@ def main():
     parser.add_argument('file')
 
     args = parser.parse_args()
-    print(args)
+
+    with open(args.file) as file:
+        node = ast.parse(file.read(), args.file)
+
+    generator = Generator()
+    generator.visit(node)
