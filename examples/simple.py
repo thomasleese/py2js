@@ -1,6 +1,4 @@
-def print_something(message='hi'):
-    thing = message
-    console.log(thing)
+abc = ['a', 'b', 'c']
 
-
-print_something('hello')
+for letter in abc:
+    console.log(letter)

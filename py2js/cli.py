@@ -5,8 +5,9 @@ from .compiler import compile
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument('file')
+    parser.add_argument('file', nargs='+')
 
     args = parser.parse_args()
 
-    compile(args.file)
+    for filename in args.file:
+        compile(filename)
