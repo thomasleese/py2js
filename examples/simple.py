@@ -1,5 +1,2 @@
-def print_something():
-    print('hello')
-
-
-print_something()
+message = 'hello'
+console.log(message)
