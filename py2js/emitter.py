@@ -36,3 +36,7 @@ class Emitter:
         fragment = indented + fragment[-1]
 
         self.fragments.append(fragment)
+
+    def emit_comma(self, index):
+        if index != 0:
+            self.emit(', ')
