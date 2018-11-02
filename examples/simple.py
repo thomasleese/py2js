@@ -1,4 +1,5 @@
-abc = ['a', 'b', 'c']
+def func(a, b='test', *, c):
+    print(a, b, c)
 
-for letter in abc:
-    console.log(letter)
+
+func('a', c='c')

@@ -59,9 +59,14 @@ class Generator(ast.NodeVisitor):
     def visit_Call(self, node):
         self.visit(node.func)
         self.emit('(')
+
         for i, arg in enumerate(node.args):
             self.emitter.emit_comma(i)
             self.visit(arg)
+
+        if node.keywords:
+            self.emitter.emit_comma(len(node.args))
+
         self.emit(')')
 
     def visit_Str(self, node):

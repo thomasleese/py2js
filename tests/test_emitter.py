@@ -1,14 +1,19 @@
+import pytest
+
 from py2js.emitter import Emitter
 
 
-def test_simple_string():
-    emitter = Emitter()
+@pytest.fixture
+def emitter():
+    return Emitter()
+
+
+def test_simple_string(emitter):
     emitter.emit('var a = 10;')
     assert str(emitter) == 'var a = 10;'
 
 
-def test_indentation():
-    emitter = Emitter()
+def test_indentation(emitter):
     emitter.emit('function test() {\n')
     emitter.indent()
     emitter.emit('var a = 10;\nvar b = 10;\n')
