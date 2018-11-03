@@ -19,8 +19,7 @@ class Generator(ast.NodeVisitor):
         self.emit(node.name)
         self.visit(node.args)
         self.emit_body(node.body)
-        self.emitter.deindent()
-        self.emit('}\n')
+        self.emitter.deindent_and_emit_closing_brace()
 
     def visit_Assign(self, node):
         self.emit('var ')
@@ -41,8 +40,7 @@ class Generator(ast.NodeVisitor):
         self.emit(') {\n')
         self.emitter.indent()
         self.emit_body(node.body)
-        self.emitter.deindent()
-        self.emit('}\n')
+        self.emitter.deindent_and_emit_closing_brace()
 
     def visit_Expr(self, node):
         self.visit(node.value)
@@ -66,12 +64,13 @@ class Generator(ast.NodeVisitor):
             self.emitter.emit_comma(i)
             self.visit(arg)
 
-        self.emitter.emit_comma(len(node.args))
-        self.emit('{')
-        for i, keyword in enumerate(node.keywords):
-            self.emitter.emit_comma(i)
-            self.visit(keyword)
-        self.emit('}')
+        if node.keywords:
+            self.emitter.emit_comma(len(node.args))
+            self.emit('__kwargs__({')
+            for i, keyword in enumerate(node.keywords):
+                self.emitter.emit_comma(i)
+                self.visit(keyword)
+            self.emit('})')
 
         self.emit(')')
 
@@ -138,7 +137,11 @@ class Generator(ast.NodeVisitor):
         attrib_arg = 'attrib'
 
         self.emit(f'var {last_arg_index} = arguments.length - 1;\n')
-        self.emit(f'var {all_args} = arguments[{last_arg_index}];\n')
+
+        self.emit(f'if (arguments[{last_arg_index}] && arguments[{last_arg_index}].hasOwnProperty("__kwargs__")) {{\n')
+        self.emitter.indent()
+
+        self.emit(f'var {all_args} = arguments[{last_arg_index}--];\n')
         self.emit(f'for (var {attrib_arg} in {all_args}) {{\n')
         self.emitter.indent()
 
@@ -152,17 +155,20 @@ class Generator(ast.NodeVisitor):
             self.emit(f'default: {node.kwarg.arg}[{attrib_arg}] = {all_args}[{attrib_arg}];\n')
 
         self.emitter.deindent_and_emit_closing_brace()
+        self.emitter.deindent_and_emit_closing_brace()
+
+        if node.kwarg:
+            self.emit(f'delete {node.kwarg.arg}.__kwargs__;\n')
 
         self.emitter.deindent_and_emit_closing_brace()
 
         if node.vararg:
             start = len(node.args)
-            self.emit(f'var {node.vararg.arg} = [].slice.apply(arguments).slice({start}, {last_arg_index});\n')
+            self.emit(f'var {node.vararg.arg} = [].slice.apply(arguments).slice({start}, {last_arg_index} + 1);\n')
             self.emitter.emit_else()
             self.emit(f'var {node.vararg.arg} = [];\n')
 
-        self.emitter.deindent()
-        self.emit('}\n')
+        self.emitter.deindent_and_emit_closing_brace()
 
     def visit_arg(self, node):
         self.emit(node.arg)
