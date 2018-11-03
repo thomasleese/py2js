@@ -6,6 +6,7 @@ class Generator(ast.NodeVisitor):
 
     def __init__(self, emitter):
         self.emitter = emitter
+        self.imported_modules = []
 
     def emit(self, fragment):
         self.emitter.emit(fragment)
@@ -40,6 +41,12 @@ class Generator(ast.NodeVisitor):
         self.emitter.indent()
         self.emit_body(node.body)
         self.emitter.deindent_and_emit_closing_brace()
+
+    def visit_Import(self, node):
+        for name in node.names:
+            self.imported_modules.append(name.name)
+            asname = name.asname if name.asname else name.name
+            self.emit(f'import * as {asname} from "./{name.name}.mjs";\n')
 
     def visit_Expr(self, node):
         self.visit(node.value)

@@ -11,8 +11,15 @@ class Emitter:
         return ''.join(self.fragments)
 
     def save(self, filename):
+        contents = str(self)
+
+        print(filename)
+        print('-' * len(str(filename)))
+        print(contents)
+        print()
+
         with open(filename, 'w') as file:
-            file.write(str(self))
+            file.write(contents)
 
     @property
     def is_new_line(self):

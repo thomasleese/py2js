@@ -19,6 +19,10 @@ class Compiler:
         generator = Generator(emitter)
         generator.visit(node)
 
+        for imported_module in generator.imported_modules:
+            path = Path(filename).with_name(imported_module + '.py')
+            self.compile_file(path)
+
     def read_builtins(self):
         filename = 'runtime/__builtins__.js'
         return pkg_resources.resource_string(__name__, filename).decode()
