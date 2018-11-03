@@ -1,9 +1,9 @@
-function __kwargs__(object) {
+export function __kwargs__(object) {
   object.__kwargs__ = true;
   return object;
 }
 
-function str(stringable) {
+export function str(stringable) {
   if (typeof stringable === 'number') {
     return stringable.toString();
   } else {

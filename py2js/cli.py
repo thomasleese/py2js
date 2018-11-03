@@ -9,9 +9,7 @@ def main():
 
     args = parser.parse_args()
 
-    compiler = Compiler()
+    compiler = Compiler('output')
 
     for filename in args.file:
         compiler.compile_file(filename)
-
-    print(compiler.emitter)

@@ -15,8 +15,7 @@ class Generator(ast.NodeVisitor):
             self.visit(statement)
 
     def visit_FunctionDef(self, node):
-        self.emit('function ')
-        self.emit(node.name)
+        self.emit(f'export function {node.name}')
         self.visit(node.args)
         self.emit_body(node.body)
         self.emitter.deindent_and_emit_closing_brace()

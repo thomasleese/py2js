@@ -10,6 +10,10 @@ class Emitter:
     def __str__(self):
         return ''.join(self.fragments)
 
+    def save(self, filename):
+        with open(filename, 'w') as file:
+            file.write(str(self))
+
     @property
     def is_new_line(self):
         if not self.fragments:
@@ -36,6 +40,9 @@ class Emitter:
         fragment = indented + fragment[-1]
 
         self.fragments.append(fragment)
+
+    def emit_newline(self):
+        self.emit('\n')
 
     def emit_comma(self, index):
         if index != 0:
