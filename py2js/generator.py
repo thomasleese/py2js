@@ -94,7 +94,7 @@ class Generator(ast.NodeVisitor):
         self.emit(']')
 
     def visit_comprehension(self, node):
-        #print(node)
+        # print(node)
         pass
 
     def visit_arguments(self, node):
@@ -138,7 +138,10 @@ class Generator(ast.NodeVisitor):
 
         self.emit(f'var {last_arg_index} = arguments.length - 1;\n')
 
-        self.emit(f'if (arguments[{last_arg_index}] && arguments[{last_arg_index}].hasOwnProperty("__kwargs__")) {{\n')
+        self.emit(f'''
+            if (arguments[{last_arg_index}] &&
+                arguments[{last_arg_index}].hasOwnProperty("__kwargs__")) {{
+        '''.strip() + '\n')
         self.emitter.indent()
 
         self.emit(f'var {all_args} = arguments[{last_arg_index}--];\n')
@@ -149,10 +152,13 @@ class Generator(ast.NodeVisitor):
         self.emitter.indent()
 
         for arg in node.args + node.kwonlyargs:
-            self.emit(f'case \'{arg.arg}\': var {arg.arg} = {all_args}[{attrib_arg}]; break;\n')
+            self.emit(f'case \'{arg.arg}\': ')
+            self.emit(f'var {arg.arg} = {all_args}[{attrib_arg}]; break;\n')
 
         if node.kwarg:
-            self.emit(f'default: {node.kwarg.arg}[{attrib_arg}] = {all_args}[{attrib_arg}];\n')
+            self.emit('default: ')
+            self.emit(f'{node.kwarg.arg}[{attrib_arg}] = ')
+            self.emit(f'{all_args}[{attrib_arg}];\n')
 
         self.emitter.deindent_and_emit_closing_brace()
         self.emitter.deindent_and_emit_closing_brace()

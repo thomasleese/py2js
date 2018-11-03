@@ -7,7 +7,9 @@ with open('README.md') as file:
 setup(
     name='py2js',
     version='0.1.0',
-    description='Experiment to see if it\'s possible to write a Python to JS transpiler.',
+    description="""
+Experiment to see if it's possible to write a Python to JS transpiler.
+    """.strip(),
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/thomasleese/py2js',
