@@ -40,3 +40,12 @@ class Emitter:
     def emit_comma(self, index):
         if index != 0:
             self.emit(', ')
+
+    def emit_else(self):
+        self.deindent()
+        self.emit('} else {\n')
+        self.indent()
+
+    def deindent_and_emit_closing_brace(self):
+        self.deindent()
+        self.emit('}\n')

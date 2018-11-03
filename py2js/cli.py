@@ -10,4 +10,4 @@ def main():
     args = parser.parse_args()
 
     for filename in args.file:
-        compile(filename)
+        print(compile(filename))

@@ -54,6 +54,7 @@ class Generator(ast.NodeVisitor):
         self.emit('var array = [];\n')
         for generator in node.generators:
             self.visit(generator)
+        self.emit('return array;\n')
         self.emitter.deindent()
         self.emit('}())')
 
@@ -65,18 +66,18 @@ class Generator(ast.NodeVisitor):
             self.emitter.emit_comma(i)
             self.visit(arg)
 
-        if node.keywords:
-            self.emitter.emit_comma(len(node.args))
-            self.emit('{')
-            for i, keyword in enumerate(node.keywords):
-                self.emitter.emit_comma(i)
-                self.visit(keyword)
-            self.emit('}')
+        self.emitter.emit_comma(len(node.args))
+        self.emit('{')
+        for i, keyword in enumerate(node.keywords):
+            self.emitter.emit_comma(i)
+            self.visit(keyword)
+        self.emit('}')
 
         self.emit(')')
 
     def visit_Str(self, node):
-        self.emit(f"'{node.s}'")
+        string = node.s.replace('\n', '\\n')
+        self.emit(f"'{string}'")
 
     def visit_Name(self, node):
         self.emit(node.id)
@@ -94,11 +95,13 @@ class Generator(ast.NodeVisitor):
         self.emit(']')
 
     def visit_comprehension(self, node):
-        print(node)
+        #print(node)
+        pass
 
     def visit_arguments(self, node):
         self.emit('(')
 
+        # positional arguments
         args_with_default = reversed(
             list(zip_longest(reversed(node.args), reversed(node.defaults)))
         )
@@ -111,20 +114,55 @@ class Generator(ast.NodeVisitor):
                 self.emit(' = ')
                 self.visit(default_expr)
 
-        self.emit(', {')
-
-        for i, (arg, default_expr) in enumerate(zip(node.kwonlyargs, node.kw_defaults)):
-            self.emitter.emit_comma(i)
-            self.visit(arg)
-            self.emit(' = ')
-            self.visit(default_expr)
-
-        self.emit('} = {}')
-
         self.emit(')')
 
         self.emit(' {\n')
         self.emitter.indent()
+
+        # defaults for keyword arguments
+        for arg, expr in zip(node.kwonlyargs, node.kw_defaults):
+            if expr:
+                self.emit(f'var {arg.arg} = ')
+                self.visit(expr)
+                self.emit(';\n')
+
+        # keyword arguments and varargs
+        if node.kwarg:
+            self.emit(f'var {node.kwarg.arg} = {{}};\n')
+
+        self.emit('if (arguments.length) {\n')
+        self.emitter.indent()
+
+        last_arg_index = 'ilastarg'
+        all_args = 'allargs'
+        attrib_arg = 'attrib'
+
+        self.emit(f'var {last_arg_index} = arguments.length - 1;\n')
+        self.emit(f'var {all_args} = arguments[{last_arg_index}];\n')
+        self.emit(f'for (var {attrib_arg} in {all_args}) {{\n')
+        self.emitter.indent()
+
+        self.emit(f'switch ({attrib_arg}) {{\n')
+        self.emitter.indent()
+
+        for arg in node.args + node.kwonlyargs:
+            self.emit(f'case \'{arg.arg}\': var {arg.arg} = {all_args}[{attrib_arg}]; break;\n')
+
+        if node.kwarg:
+            self.emit(f'default: {node.kwarg.arg}[{attrib_arg}] = {all_args}[{attrib_arg}];\n')
+
+        self.emitter.deindent_and_emit_closing_brace()
+
+        self.emitter.deindent_and_emit_closing_brace()
+
+        if node.vararg:
+            start = len(node.args)
+            self.emit(f'var {node.vararg.arg} = [].slice.apply(arguments).slice({start}, {last_arg_index});\n')
+            self.emitter.emit_else()
+            self.emit(f'var {node.vararg.arg} = [];\n')
+
+        self.emitter.deindent()
+        self.emit('}\n')
 
     def visit_arg(self, node):
         self.emit(node.arg)
