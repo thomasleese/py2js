@@ -1,4 +1,5 @@
 import ast
+import pkg_resources
 
 from .emitter import Emitter
 from .generator import Generator
@@ -15,14 +16,14 @@ def compile_source(source, filename='unknown'):
 
 
 def load_builtins():
-    with open('runtime/__builtins__.js') as file:
-        return file.read()
+    filename = 'runtime/__builtins__.js'
+    return pkg_resources.resource_string(__name__, filename).decode()
 
 
 def compile_runtime():
-    with open('runtime/core.py') as file:
-        source = file.read()
-    return compile_source(source, 'runtime/core.py')
+    filename = 'runtime/__builtins__.py'
+    source = pkg_resources.resource_string(__name__, filename)
+    return compile_source(source, '__builtins__.py')
 
 
 def compile(filename):
@@ -31,5 +32,6 @@ def compile(filename):
 
     with open(filename) as file:
         source = file.read()
+
     compiled = compile_source(source, filename)
     return builtins + '\n' + runtime_compiled + '\n' + compiled
