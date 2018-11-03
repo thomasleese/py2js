@@ -12,4 +12,6 @@ def main():
     compiler = Compiler()
 
     for filename in args.file:
-        print(compiler.compile(filename))
+        compiler.compile_file(filename)
+
+    print(compiler.emitter)

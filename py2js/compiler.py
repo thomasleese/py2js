@@ -7,30 +7,33 @@ from .generator import Generator
 
 class Compiler:
 
+    def __init__(self):
+        self.emitter = Emitter()
+        self.load_runtime()
+
     def compile_source(self, source, filename='unknown'):
         node = ast.parse(source, filename)
-
-        emitter = Emitter()
-        generator = Generator(emitter)
+        generator = Generator(self.emitter)
         generator.visit(node)
 
-        return str(emitter)
+    def load_runtime(self):
+        self.emitter.emit(self.read_builtins())
+        self.compile_runtime()
 
-    def load_builtins(self):
+    def read_builtins(self):
         filename = 'runtime/__builtins__.js'
         return pkg_resources.resource_string(__name__, filename).decode()
 
     def compile_runtime(self):
         filename = 'runtime/__builtins__.py'
         source = pkg_resources.resource_string(__name__, filename)
-        return self.compile_source(source, '__builtins__.py')
+        self.compile_source(source, '__builtins__.py')
 
-    def compile(self, filename):
-        builtins = self.load_builtins()
-        runtime_compiled = self.compile_runtime()
-
+    def compile_file(self, filename):
         with open(filename) as file:
             source = file.read()
+        self.compile_source(source, filename)
 
-        compiled = self.compile_source(source, filename)
-        return builtins + '\n' + runtime_compiled + '\n' + compiled
+    def compile(self, filename):
+        self.compile_file(filename)
+        return str(self.emitter)
