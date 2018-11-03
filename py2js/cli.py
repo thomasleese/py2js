@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from .compiler import compile
+from .compiler import Compiler
 
 
 def main():
@@ -9,5 +9,7 @@ def main():
 
     args = parser.parse_args()
 
+    compiler = Compiler()
+
     for filename in args.file:
-        print(compile(filename))
+        print(compiler.compile(filename))

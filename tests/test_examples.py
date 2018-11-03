@@ -3,18 +3,10 @@ import subprocess
 
 import pytest
 
-from py2js.compiler import compile
+from py2js.compiler import Compiler
 
 
-def load_test_cases():
-    path = Path(__file__).parent / 'examples'
-
-    test_cases = path.iterdir()
-
-    return test_cases
-
-
-test_cases = load_test_cases()
+test_cases = (Path(__file__).parent / 'examples').iterdir()
 
 
 @pytest.mark.parametrize('filename', test_cases)
@@ -22,7 +14,7 @@ def test_runs(filename):
     python_output = subprocess.check_output(['python3', filename])
     assert python_output
 
-    javascript_source = compile(filename)
+    javascript_source = Compiler().compile(filename)
     assert javascript_source
 
     javascript_output = subprocess.run(
