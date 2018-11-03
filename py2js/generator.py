@@ -1,4 +1,5 @@
 import ast
+from itertools import zip_longest
 
 
 class Generator(ast.NodeVisitor):
@@ -66,6 +67,11 @@ class Generator(ast.NodeVisitor):
 
         if node.keywords:
             self.emitter.emit_comma(len(node.args))
+            self.emit('{')
+            for i, keyword in enumerate(node.keywords):
+                self.emitter.emit_comma(i)
+                self.visit(keyword)
+            self.emit('}')
 
         self.emit(')')
 
@@ -92,26 +98,38 @@ class Generator(ast.NodeVisitor):
 
     def visit_arguments(self, node):
         self.emit('(')
-        for i, arg in enumerate(node.args):
+
+        args_with_default = reversed(
+            list(zip_longest(reversed(node.args), reversed(node.defaults)))
+        )
+
+        for i, (arg, default_expr) in enumerate(args_with_default):
             self.emitter.emit_comma(i)
             self.visit(arg)
+
+            if default_expr:
+                self.emit(' = ')
+                self.visit(default_expr)
+
+        self.emit(', {')
+
+        for i, (arg, default_expr) in enumerate(zip(node.kwonlyargs, node.kw_defaults)):
+            self.emitter.emit_comma(i)
+            self.visit(arg)
+            self.emit(' = ')
+            self.visit(default_expr)
+
+        self.emit('} = {}')
+
         self.emit(')')
 
         self.emit(' {\n')
         self.emitter.indent()
 
-        for arg, expr in zip(reversed(node.args), reversed(node.defaults)):
-            if expr is None:
-                continue
-
-            self.emit(f'if (typeof {arg.arg} == "undefined")')
-            self.emit(' {\n')
-            self.emitter.indent()
-            self.emit(f'var {arg.arg} = ')
-            self.visit(expr)
-            self.emit(';\n')
-            self.emitter.deindent()
-            self.emit('}\n')
-
     def visit_arg(self, node):
         self.emit(node.arg)
+
+    def visit_keyword(self, node):
+        self.emit(node.arg)
+        self.emit(': ')
+        self.visit(node.value)

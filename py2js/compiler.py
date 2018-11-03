@@ -17,4 +17,6 @@ def compile_source(source, filename='unknown'):
 def compile(filename):
     with open(filename) as file:
         source = file.read()
-    print(compile_source(source, filename))
+    compiled = compile_source(source, filename)
+    print(compiled)
+    return compiled
