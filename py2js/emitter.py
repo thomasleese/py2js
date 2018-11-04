@@ -70,6 +70,10 @@ class Emitter:
         if index != 0:
             self.emit(', ')
 
+    def emit_if(self, condition):
+        self.emit(f'if ({condition}) {{\n')
+        self.indentation += 1
+
     def emit_else(self):
         self.indentation -= 1
         self.emit('} else {\n')

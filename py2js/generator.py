@@ -134,8 +134,7 @@ class Generator(ast.NodeVisitor):
         if node.kwarg:
             self.emit(f'var {node.kwarg.arg} = {{}};\n')
 
-        self.emit('if (arguments.length)')
-        self.emitter.emit_opening_brace_and_indent()
+        self.emitter.emit_if('arguments.length')
 
         last_arg_index = 'ilastarg'
         all_args = 'allargs'
@@ -143,11 +142,7 @@ class Generator(ast.NodeVisitor):
 
         self.emit(f'var {last_arg_index} = arguments.length - 1;\n')
 
-        self.emit(f'''
-            if (arguments[{last_arg_index}] &&
-                arguments[{last_arg_index}].hasOwnProperty("__kwargs__")) {{
-        '''.strip() + '\n')
-        self.emitter.indentation += 1
+        self.emitter.emit_if('arguments[{0}] && arguments[{0}].hasOwnProperty("__kwargs__")'.format(last_arg_index))
 
         self.emit(f'var {all_args} = arguments[{last_arg_index}--];\n')
         self.emit(f'for (var {attrib_arg} in {all_args}) {{\n')
