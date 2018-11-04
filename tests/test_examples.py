@@ -7,7 +7,7 @@ import pytest
 from py2js.compiler import Compiler
 
 
-test_cases = ['functions.py', 'modules.py']
+test_cases = ['functions.py', 'modules.py', 'classes.py']
 
 
 @pytest.mark.parametrize('filename', test_cases)
