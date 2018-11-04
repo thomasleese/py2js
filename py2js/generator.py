@@ -37,8 +37,8 @@ class Generator(ast.NodeVisitor):
         self.visit(node.target)
         self.emit(' of ')
         self.visit(node.iter)
-        self.emit(') {\n')
-        self.emitter.indent()
+        self.emit(')')
+        self.emitter.emit_opening_brace_and_indent()
         self.emit_body(node.body)
         self.emitter.deindent_and_emit_closing_brace()
 
@@ -53,8 +53,8 @@ class Generator(ast.NodeVisitor):
         self.emit(';\n')
 
     def visit_ListComp(self, node):
-        self.emit('(function () {\n')
-        self.emitter.indent()
+        self.emit('(function ()')
+        self.emitter.emit_opening_brace_and_indent()
         self.emit('var array = [];\n')
         for generator in node.generators:
             self.visit(generator)
@@ -121,8 +121,7 @@ class Generator(ast.NodeVisitor):
 
         self.emit(')')
 
-        self.emit(' {\n')
-        self.emitter.indent()
+        self.emitter.emit_opening_brace_and_indent()
 
         # defaults for keyword arguments
         for arg, expr in zip(node.kwonlyargs, node.kw_defaults):
@@ -135,8 +134,8 @@ class Generator(ast.NodeVisitor):
         if node.kwarg:
             self.emit(f'var {node.kwarg.arg} = {{}};\n')
 
-        self.emit('if (arguments.length) {\n')
-        self.emitter.indent()
+        self.emit('if (arguments.length)')
+        self.emitter.emit_opening_brace_and_indent()
 
         last_arg_index = 'ilastarg'
         all_args = 'allargs'
@@ -148,14 +147,14 @@ class Generator(ast.NodeVisitor):
             if (arguments[{last_arg_index}] &&
                 arguments[{last_arg_index}].hasOwnProperty("__kwargs__")) {{
         '''.strip() + '\n')
-        self.emitter.indent()
+        self.emitter.indentation += 1
 
         self.emit(f'var {all_args} = arguments[{last_arg_index}--];\n')
         self.emit(f'for (var {attrib_arg} in {all_args}) {{\n')
-        self.emitter.indent()
+        self.emitter.indentation += 1
 
         self.emit(f'switch ({attrib_arg}) {{\n')
-        self.emitter.indent()
+        self.emitter.indentation += 1
 
         for arg in node.args + node.kwonlyargs:
             self.emit(f'case \'{arg.arg}\': ')

@@ -15,9 +15,9 @@ def test_simple_string(emitter):
 
 def test_indentation(emitter):
     emitter.emit('function test() {\n')
-    emitter.indent()
+    emitter.indentation += 1
     emitter.emit('var a = 10;\nvar b = 10;\n')
-    emitter.deindent()
+    emitter.indentation -= 1
     emitter.emit('}')
 
     assert str(emitter) == """

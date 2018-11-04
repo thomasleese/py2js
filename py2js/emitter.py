@@ -1,11 +1,36 @@
 """For emitting JavaScript."""
 
 
+class Indentation:
+
+    def __init__(self):
+        self.level = 0
+        self._str = ''
+
+    def __iadd__(self, other):
+        self.level += other
+        self._reload_str()
+        return self
+
+    def __isub__(self, other):
+        if self.level < other:
+            raise ValueError('Level would end up negative.')
+        self.level -= other
+        self._reload_str()
+        return self
+
+    def _reload_str(self):
+        self._str = '  ' * self.level
+
+    def __str__(self):
+        return self._str
+
+
 class Emitter:
 
     def __init__(self):
+        self.indentation = Indentation()
         self.fragments = []
-        self.indent_level = 0
 
     def __str__(self):
         return ''.join(self.fragments)
@@ -28,22 +53,12 @@ class Emitter:
 
         return self.fragments[-1].endswith('\n')
 
-    @property
-    def indentation(self):
-        return '  ' * self.indent_level
-
-    def indent(self):
-        self.indent_level += 1
-
-    def deindent(self):
-        self.indent_level -= 1
-
     def emit(self, fragment):
         if self.is_new_line:
-            self.fragments.append(self.indentation)
+            self.fragments.append(str(self.indentation))
 
         # ignore last character as it could be a new line
-        indented = fragment[:-1].replace('\n', '\n' + self.indentation)
+        indented = fragment[:-1].replace('\n', '\n' + str(self.indentation))
         fragment = indented + fragment[-1]
 
         self.fragments.append(fragment)
@@ -56,10 +71,14 @@ class Emitter:
             self.emit(', ')
 
     def emit_else(self):
-        self.deindent()
+        self.indentation -= 1
         self.emit('} else {\n')
-        self.indent()
+        self.indentation += 1
 
     def deindent_and_emit_closing_brace(self):
-        self.deindent()
+        self.indentation -= 1
         self.emit('}\n')
+
+    def emit_opening_brace_and_indent(self, space=True):
+        self.emit(f'{" " if space else ""}{{\n')
+        self.indentation += 1
