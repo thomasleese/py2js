@@ -22,5 +22,5 @@ def test_string(emitter, generator):
 
 
 def test_name(emitter, generator):
-    generator.visit(ast.Name('test'))
+    generator.visit(ast.Name('test', None))
     assert str(emitter) == 'test'
