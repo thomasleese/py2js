@@ -1,11 +1,38 @@
 import ast
+from collections import defaultdict
 from itertools import zip_longest
+
+
+class TemporaryVariable:
+
+    def __init__(self, name):
+        self.name = name
+        self.index = 0
+
+    def __str__(self):
+        return f'__{self.name}{self.index}__'
+
+    def __enter__(self):
+        self.index += 1
+        return str(self)
+
+    def __exit__(self, *args):
+        self.index -= 1
+        return False
+
+
+class TemporaryVariables(defaultdict):
+
+    def __missing__(self, key):
+        self[key] = var = TemporaryVariable(key)
+        return var
 
 
 class Generator(ast.NodeVisitor):
 
     def __init__(self, emitter):
         self.emitter = emitter
+        self.temp_vars = TemporaryVariables()
         self.imported_modules = []
 
     def emit(self, fragment):
@@ -134,45 +161,46 @@ class Generator(ast.NodeVisitor):
 
         self.emitter.emit_if('arguments.length')
 
-        last_arg_index = 'ilastarg'
-        all_args = 'allargs'
-        attrib_arg = 'attrib'
+        with self.temp_vars['ilastarg'] as arguments_last_index_var, self.temp_vars['kwargs'] as kwargs_var, self.temp_vars['kwarg'] as kwarg_var:
+            self.emitter.emit_var(arguments_last_index_var, 'arguments.length - 1')
 
-        self.emitter.emit_var(last_arg_index, 'arguments.length - 1')
+            self.emitter.emit_if(
+                'arguments[{0}] && arguments[{0}].hasOwnProperty("__kwargs__")'.format(arguments_last_index_var)
+            )
 
-        self.emitter.emit_if('arguments[{0}] && arguments[{0}].hasOwnProperty("__kwargs__")'.format(last_arg_index))
-
-        self.emitter.emit_var(all_args, f'arguments[{last_arg_index}--]')
-        self.emit(f'for (var {attrib_arg} in {all_args}) {{\n')
-        self.emitter.indentation += 1
-
-        self.emitter.emit_switch(attrib_arg)
-
-        for arg in node.args + node.kwonlyargs:
-            self.emit(f'case \'{arg.arg}\': ')
+            self.emitter.emit_var(kwargs_var, f'arguments[{arguments_last_index_var}--]')
+            self.emit(f'for (var {kwarg_var} in {kwargs_var}) {{\n')
             self.emitter.indentation += 1
-            self.emitter.emit_var(arg.arg, f'{all_args}[{attrib_arg}]')
-            self.emitter.emit_break()
-            self.emitter.indentation -= 1
 
-        if node.kwarg:
-            self.emit(f'default: {node.kwarg.arg}[{attrib_arg}] = {all_args}[{attrib_arg}];\n')
+            self.emitter.emit_switch(kwarg_var)
 
-        self.emitter.deindent_and_emit_closing_brace()
-        self.emitter.deindent_and_emit_closing_brace()
+            for arg in node.args + node.kwonlyargs:
+                self.emit(f'case \'{arg.arg}\': ')
+                self.emitter.indentation += 1
+                self.emitter.emit_var(arg.arg, f'{kwargs_var}[{kwarg_var}]')
+                self.emitter.emit_break()
+                self.emitter.indentation -= 1
 
-        if node.kwarg:
-            self.emit(f'delete {node.kwarg.arg}.__kwargs__;\n')
+            if node.kwarg:
+                self.emit(f'default: {node.kwarg.arg}[{kwarg_var}] = {kwargs_var}[{kwarg_var}];\n')
 
-        self.emitter.deindent_and_emit_closing_brace()
+            self.emitter.deindent_and_emit_closing_brace()
+            self.emitter.deindent_and_emit_closing_brace()
 
-        if node.vararg:
-            start = len(node.args)
-            self.emitter.emit_var(node.vararg.arg, f'[].slice.apply(arguments).slice({start}, {last_arg_index} + 1)')
-            self.emitter.emit_else()
-            self.emitter.emit_var(node.vararg.arg, '[]')
+            if node.kwarg:
+                self.emit(f'delete {node.kwarg.arg}.__kwargs__;\n')
 
-        self.emitter.deindent_and_emit_closing_brace()
+            self.emitter.deindent_and_emit_closing_brace()
+
+            if node.vararg:
+                start = len(node.args)
+                self.emitter.emit_var(
+                    node.vararg.arg, f'[].slice.apply(arguments).slice({start}, {arguments_last_index_var} + 1)'
+                )
+                self.emitter.emit_else()
+                self.emitter.emit_var(node.vararg.arg, '[]')
+
+            self.emitter.deindent_and_emit_closing_brace()
 
     def visit_arg(self, node):
         self.emit(node.arg)

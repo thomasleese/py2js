@@ -16,6 +16,19 @@ def generator(emitter):
     return Generator(emitter)
 
 
+def test_temporary_variables(generator):
+    temp_vars = generator.temp_vars
+
+    with temp_vars['test'] as arg:
+        assert arg == '__test1__'
+
+        with temp_vars['test'] as arg2:
+            assert arg2 == '__test2__'
+
+    with temp_vars['test'] as arg:
+        assert arg == '__test1__'
+
+
 def test_string(emitter, generator):
     generator.visit(ast.Str('test'))
     assert str(emitter) == "'test'"
