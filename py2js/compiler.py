@@ -20,8 +20,8 @@ class Compiler:
         generator.visit(node)
 
         for imported_module in generator.imported_modules:
-            path = Path(filename).with_name(imported_module + '.py')
-            self.compile_file(path)
+            path = Path(filename).parent / (imported_module.replace('.', '/') + '.py')
+            self.compile_file(path, imported_module + '.mjs')
 
     def read_builtins(self):
         filename = 'runtime/__builtins__.js'
@@ -38,7 +38,7 @@ class Compiler:
 
         emitter.save(self.output_dir / '__builtins__.mjs')
 
-    def compile_file(self, filename):
+    def compile_file(self, filename, output_filename=None):
         with open(filename) as file:
             source = file.read()
 
@@ -47,7 +47,8 @@ class Compiler:
 
         self.compile_source(emitter, source, filename)
 
-        output_filename = Path(filename).name.replace('.py', '.mjs')
+        if output_filename is None:
+            output_filename = Path(filename).name.replace('.py', '.mjs')
 
         js_path = self.output_dir / output_filename
         emitter.save(js_path)
