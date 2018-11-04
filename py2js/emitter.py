@@ -63,12 +63,32 @@ class Emitter:
 
         self.fragments.append(fragment)
 
+    def call_or_emit(self, thing):
+        if callable(thing):
+            thing()
+        else:
+            self.emit(thing)
+
     def emit_newline(self):
         self.emit('\n')
 
     def emit_comma(self, index):
         if index != 0:
             self.emit(', ')
+
+    def emit_semicolon_and_newline(self):
+        self.emit(';\n')
+
+    def emit_var(self, name, value):
+        self.emit(f'var {name} = ')
+        self.call_or_emit(value)
+        self.emit_semicolon_and_newline()
+
+    def emit_break(self):
+        self.emit('break;\n')
+
+    def emit_return(self, value):
+        self.emit(f'return {value};\n')
 
     def emit_if(self, condition):
         self.emit(f'if ({condition}) {{\n')
@@ -77,6 +97,10 @@ class Emitter:
     def emit_else(self):
         self.indentation -= 1
         self.emit('} else {\n')
+        self.indentation += 1
+
+    def emit_switch(self, condition):
+        self.emit(f'switch ({condition}) {{\n')
         self.indentation += 1
 
     def deindent_and_emit_closing_brace(self):

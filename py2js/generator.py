@@ -55,11 +55,11 @@ class Generator(ast.NodeVisitor):
     def visit_ListComp(self, node):
         self.emit('(function ()')
         self.emitter.emit_opening_brace_and_indent()
-        self.emit('var array = [];\n')
+        self.emitter.emit_var('array', '[]')
         for generator in node.generators:
             self.visit(generator)
-        self.emit('return array;\n')
-        self.emitter.deindent()
+        self.emitter.emit_return('array')
+        self.emitter.indentation -= 1
         self.emit('}())')
 
     def visit_Call(self, node):
@@ -126,13 +126,11 @@ class Generator(ast.NodeVisitor):
         # defaults for keyword arguments
         for arg, expr in zip(node.kwonlyargs, node.kw_defaults):
             if expr:
-                self.emit(f'var {arg.arg} = ')
-                self.visit(expr)
-                self.emit(';\n')
+                self.emitter.emit_var(arg.arg, lambda: self.visit(expr))
 
         # keyword arguments and varargs
         if node.kwarg:
-            self.emit(f'var {node.kwarg.arg} = {{}};\n')
+            self.emitter.emit_var(node.kwarg.arg, '{}')
 
         self.emitter.emit_if('arguments.length')
 
@@ -140,25 +138,25 @@ class Generator(ast.NodeVisitor):
         all_args = 'allargs'
         attrib_arg = 'attrib'
 
-        self.emit(f'var {last_arg_index} = arguments.length - 1;\n')
+        self.emitter.emit_var(last_arg_index, 'arguments.length - 1')
 
         self.emitter.emit_if('arguments[{0}] && arguments[{0}].hasOwnProperty("__kwargs__")'.format(last_arg_index))
 
-        self.emit(f'var {all_args} = arguments[{last_arg_index}--];\n')
+        self.emitter.emit_var(all_args, f'arguments[{last_arg_index}--]')
         self.emit(f'for (var {attrib_arg} in {all_args}) {{\n')
         self.emitter.indentation += 1
 
-        self.emit(f'switch ({attrib_arg}) {{\n')
-        self.emitter.indentation += 1
+        self.emitter.emit_switch(attrib_arg)
 
         for arg in node.args + node.kwonlyargs:
             self.emit(f'case \'{arg.arg}\': ')
-            self.emit(f'var {arg.arg} = {all_args}[{attrib_arg}]; break;\n')
+            self.emitter.indentation += 1
+            self.emitter.emit_var(arg.arg, f'{all_args}[{attrib_arg}]')
+            self.emitter.emit_break()
+            self.emitter.indentation -= 1
 
         if node.kwarg:
-            self.emit('default: ')
-            self.emit(f'{node.kwarg.arg}[{attrib_arg}] = ')
-            self.emit(f'{all_args}[{attrib_arg}];\n')
+            self.emit(f'default: {node.kwarg.arg}[{attrib_arg}] = {all_args}[{attrib_arg}];\n')
 
         self.emitter.deindent_and_emit_closing_brace()
         self.emitter.deindent_and_emit_closing_brace()
@@ -170,9 +168,9 @@ class Generator(ast.NodeVisitor):
 
         if node.vararg:
             start = len(node.args)
-            self.emit(f'var {node.vararg.arg} = [].slice.apply(arguments).slice({start}, {last_arg_index} + 1);\n')
+            self.emitter.emit_var(node.vararg.arg, f'[].slice.apply(arguments).slice({start}, {last_arg_index} + 1)')
             self.emitter.emit_else()
-            self.emit(f'var {node.vararg.arg} = [];\n')
+            self.emitter.emit_var(node.vararg.arg, '[]')
 
         self.emitter.deindent_and_emit_closing_brace()
 
