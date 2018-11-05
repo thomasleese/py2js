@@ -28,11 +28,53 @@ class TemporaryVariables(defaultdict):
         return var
 
 
+class ScopeContext:
+
+    def __init__(self, scope, node):
+        self.scope = scope
+        self.node = node
+
+    def __enter__(self):
+        self.scope.push(self.node)
+
+    def __exit__(self, *args):
+        self.scope.pop()
+        return False
+
+
+class Scope:
+
+    def __init__(self):
+        self.nodes = []
+
+    def __call__(self, node):
+        return ScopeContext(self, node)
+
+    def push(self, node):
+        self.nodes.append(node)
+
+    def pop(self):
+        self.nodes.pop()
+
+    @property
+    def node(self):
+        return self.nodes[-1]
+
+    @property
+    def in_module(self):
+        return isinstance(self.node, ast.Module)
+
+    @property
+    def in_class(self):
+        return isinstance(self.node, ast.ClassDef)
+
+
 class Generator(ast.NodeVisitor):
 
     def __init__(self, emitter):
         self.emitter = emitter
         self.temp_vars = TemporaryVariables()
+        self.scope = Scope()
         self.imported_modules = []
 
     def emit(self, fragment):
