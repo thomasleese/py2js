@@ -103,9 +103,11 @@ class Emitter:
         self.emit(f'switch ({condition}) {{\n')
         self.indentation += 1
 
-    def deindent_and_emit_closing_brace(self):
+    def deindent_and_emit_closing_brace(self, newline=True):
         self.indentation -= 1
-        self.emit('}\n')
+        self.emit('}')
+        if newline:
+            self.emit_newline()
 
     def emit_opening_brace_and_indent(self, space=True):
         self.emit(f'{" " if space else ""}{{\n')
